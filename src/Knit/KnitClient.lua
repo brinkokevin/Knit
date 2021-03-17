@@ -69,15 +69,21 @@ local function BuildService(serviceName, folder)
 end
 
 
-function KnitClient.CreateController(controller)
-	assert(type(controller) == "table", "Controller must be a table; got " .. type(controller))
-	assert(type(controller.Name) == "string", "Controller.Name must be a string; got " .. type(controller.Name))
-	assert(#controller.Name > 0, "Controller.Name must be a non-empty string")
-	assert(KnitClient.Controllers[controller.Name] == nil, "Service \"" .. controller.Name .. "\" already exists")
+function KnitClient.CreateController(tempController)
+	assert(type(tempController) == "table", "Controller must be a table; got " .. type(tempController))
+	assert(type(tempController.Name) == "string", "Controller.Name must be a string; got " .. type(tempController.Name))
+	assert(#tempController.Name > 0, "Controller.Name must be a non-empty string")
+	local controller = KnitClient.Controllers[tempController.Name]
+	assert(controller == nil or controller._knit_is_controller == nil, "Controller \"" .. tempController.Name .. "\" already exists")
+	if controller then
+		TableUtil.Extend(controller, tempController)
+	else
+		controller = tempController
+		KnitClient.Controllers[controller.Name] = controller
+	end
 	TableUtil.Extend(controller, {
 		_knit_is_controller = true;
 	})
-	KnitClient.Controllers[controller.Name] = controller
 	return controller
 end
 
@@ -101,7 +107,12 @@ end
 
 
 function KnitClient.GetController(controllerName)
-	return KnitClient.Controllers[controllerName]
+	local controller = KnitClient.Controllers[controllerName]
+	if not controller then
+		controller = {}
+		KnitClient.Controllers[controllerName] = controller
+	end
+	return controller
 end
 
 

@@ -74,11 +74,18 @@ function KnitServer.IsService(object)
 end
 
 
-function KnitServer.CreateService(service)
-	assert(type(service) == "table", "Service must be a table; got " .. type(service))
-	assert(type(service.Name) == "string", "Service.Name must be a string; got " .. type(service.Name))
-	assert(#service.Name > 0, "Service.Name must be a non-empty string")
-	assert(KnitServer.Services[service.Name] == nil, "Service \"" .. service.Name .. "\" already exists")
+function KnitServer.CreateService(tempService)
+	assert(type(tempService) == "table", "Service must be a table; got " .. type(tempService))
+	assert(type(tempService.Name) == "string", "Service.Name must be a string; got " .. type(tempService.Name))
+	assert(#tempService.Name > 0, "Service.Name must be a non-empty string")
+	local service = KnitServer.Services[tempService.Name]
+	assert(service == nil or service._knit_is_service == nil, "Service \"" .. tempService.Name .. "\" already exists")
+	if service then
+		TableUtil.Extend(service, tempService)
+	else
+		service = tempService
+		KnitServer.Services[service.Name] = service
+	end
 	TableUtil.Extend(service, {
 		_knit_is_service = true;
 		_knit_rf = {};
@@ -93,7 +100,16 @@ function KnitServer.CreateService(service)
 			service.Client.Server = service
 		end
 	end
-	KnitServer.Services[service.Name] = service
+	return service
+end
+
+
+function KnitServer.GetService(serviceName)
+	local service = KnitServer.Services[serviceName]
+	if not service then
+		service = {}
+		KnitServer.Services[serviceName] = service
+	end
 	return service
 end
 
